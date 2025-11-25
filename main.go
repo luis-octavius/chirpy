@@ -24,9 +24,9 @@ func main() {
 	appHandler := http.FileServer(http.Dir("."))
 
 	mux.Handle("/app/", http.StripPrefix("/app/", apiCfg.middlewareMetricsInc(appHandler)))
-	mux.Handle("/healthz", handlerHealthz())
-	mux.Handle("/metrics", apiCfg.handlerMetrics())
-	mux.Handle("/reset", apiCfg.handlerReset())
+	mux.Handle("GET /api/healthz", handlerHealthz())
+	mux.Handle("GET /admin/metrics", apiCfg.handlerMetrics())
+	mux.Handle("POST /admin/reset", apiCfg.handlerReset())
 
 	// ListenAndServe starts a server with an address and a handler
 	err := server.ListenAndServe()
