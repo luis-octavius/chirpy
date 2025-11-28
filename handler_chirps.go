@@ -80,6 +80,19 @@ func (cfg *apiConfig) handlerGetAllChirps() http.Handler {
 func (cfg *apiConfig) handlerGetChirp() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("chirpID")
+		parsedID, err := uuid.Parse(id)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError) // 500
+			return
+		}
 
+		chirp, err := cfg.queries.GetChirpByID(r.Context(), parsedID)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound) // 404
+			return
+		}
+
+		writeJSON(w, http.StatusOK, chirp) // 200
 	})
 }

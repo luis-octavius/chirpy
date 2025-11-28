@@ -74,6 +74,7 @@ func main() {
 	// chirps endpoints
 	mux.Handle("GET /api/chirps", apiCfg.handlerGetAllChirps())
 	mux.Handle("POST /api/chirps", apiCfg.handlerAddChirps())
+	mux.Handle("GET /api/chirps/{chirpID}", apiCfg.handlerGetChirp())
 
 	// ListenAndServe starts a server with an address and a handler
 	err = server.ListenAndServe()
