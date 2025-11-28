@@ -70,7 +70,10 @@ func main() {
 	mux.Handle("POST /admin/reset", apiCfg.handlerReset())
 
 	mux.Handle("POST /api/users", apiCfg.handlerUsers())
-	mux.Handle("POST /api/chirps", apiCfg.handlerChirp())
+
+	// chirps endpoints
+	mux.Handle("GET /api/chirps", apiCfg.handlerGetAllChirps())
+	mux.Handle("POST /api/chirps", apiCfg.handlerAddChirps())
 
 	// ListenAndServe starts a server with an address and a handler
 	err = server.ListenAndServe()
