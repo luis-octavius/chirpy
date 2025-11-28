@@ -6,9 +6,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-
-	"github.com/google/uuid"
-	"github.com/luis-octavius/chirpy/internal/database"
 )
 
 // middlewareMetricsInc is a wrapper that adds one to the count of
@@ -47,106 +44,16 @@ func (cfg *apiConfig) handlerReset() http.Handler {
 
 		if cfg.platform != "dev" {
 			w.WriteHeader(http.StatusForbidden)
-			fmt.Println("is not dev")
 			return
 		}
 
 		err := cfg.queries.DeleteAllUsers(r.Context())
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Println("not deleted")
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-	})
-}
-
-func (cfg *apiConfig) handlerChirp() http.Handler {
-	type CreateChirpRequest struct {
-		Body   string    `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
-	}
-
-	type validateChirpResponse struct {
-		Error       string `json:"error,omitempty"`
-		Valid       bool   `json:"valid,omitempty"`
-		CleanedBody string `json:"cleaned_body,omitempty"`
-	}
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var req CreateChirpRequest
-
-		// decoding POST body request
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			resp := validateChirpResponse{Error: "Something went wrong"}
-			writeJSON(w, http.StatusInternalServerError, resp)
-			return
-		}
-
-		chirpLength := 140
-
-		if len(req.Body) > chirpLength {
-			resp := validateChirpResponse{Error: "Chirp is too long"}
-			writeJSON(w, http.StatusBadRequest, resp)
-			return
-		}
-
-		filteredMessage := validateMessage(req.Body)
-
-		chirp, err := cfg.queries.CreateChirp(r.Context(), database.CreateChirpParams{
-			Body:   filteredMessage,
-			UserID: req.UserID,
-		})
-		if err != nil {
-			log.Printf("error creating the chirp: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		resp := Chirp{
-			ID:        chirp.ID,
-			CreatedAt: chirp.CreatedAt,
-			UpdatedAt: chirp.UpdatedAt,
-			Body:      chirp.Body,
-			UserID:    chirp.UserID,
-		}
-
-		writeJSON(w, http.StatusCreated, resp)
-	})
-}
-
-func (cfg *apiConfig) handlerUsers() http.Handler {
-	type validateParams struct {
-		Email string `json:"email,omitempty"`
-		Error string `json:"error,omitempty"`
-	}
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var req validateParams
-
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			resp := validateParams{Error: "something went wrong with JSON decoding"}
-			writeJSON(w, http.StatusInternalServerError, resp)
-			return
-		}
-
-		user, err := cfg.queries.CreateUser(r.Context(), req.Email)
-		if err != nil {
-			resp := validateParams{Error: "something went wrong creating user in database"}
-			writeJSON(w, http.StatusInternalServerError, resp)
-			return
-		}
-
-		resp := User{
-			ID:        user.ID,
-			CreatedAt: user.CreatedAt,
-			UpdatedAt: user.UpdatedAt,
-			Email:     user.Email,
-		}
-
-		writeJSON(w, http.StatusCreated, resp)
-
 	})
 }
 
