@@ -66,10 +66,13 @@ func main() {
 	mux.Handle("/app/", appHandler)
 	mux.Handle("GET /api/healthz", handlerHealthz())
 
+	// admin endpoints
 	mux.Handle("GET /admin/metrics", apiCfg.handlerMetrics())
 	mux.Handle("POST /admin/reset", apiCfg.handlerReset())
 
+	// users endpoints
 	mux.Handle("POST /api/users", apiCfg.handlerUsers())
+	mux.Handle("POST /api/login", apiCfg.handlerUserLogin())
 
 	// chirps endpoints
 	mux.Handle("GET /api/chirps", apiCfg.handlerGetAllChirps())
