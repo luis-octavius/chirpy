@@ -57,8 +57,8 @@ func (cfg *apiConfig) handlerReset() http.Handler {
 	})
 }
 
-// writeJSON is a helper function that marshal data
-// and write the data into the ResponseWriter
+// writeJSON is a helper function that marshals data
+// and write the same data into the ResponseWriter
 //
 // always returns JSON and write to the Header and
 // the body of response the status of the request

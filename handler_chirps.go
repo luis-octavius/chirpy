@@ -9,6 +9,11 @@ import (
 	"github.com/luis-octavius/chirpy/internal/database"
 )
 
+// handlerAddChirps adds a chirp on the database
+//
+// Returns 400 if JSON decoding fails or chirp exceeds length limit
+// Returns 500 if the chirp creation fails on the database
+// Returns 201 with created chirp data on success
 func (cfg *apiConfig) handlerAddChirps() http.Handler {
 	type CreateChirpRequest struct {
 		Body   string    `json:"body"`
@@ -24,10 +29,9 @@ func (cfg *apiConfig) handlerAddChirps() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req CreateChirpRequest
 
-		// decoding POST body request
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			resp := validateChirpResponse{Error: "Something went wrong"}
-			writeJSON(w, http.StatusInternalServerError, resp)
+			writeJSON(w, http.StatusBadRequest, resp)
 			return
 		}
 
@@ -65,25 +69,32 @@ func (cfg *apiConfig) handlerAddChirps() http.Handler {
 	})
 }
 
+// handlerGetAllChirps retrieves all chirps from the database
+//
+// Returns 500 if the chirps cannot be retrieved from database
+// Returns 200 with all chirps data on success
 func (cfg *apiConfig) handlerGetAllChirps() http.Handler {
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fetchedChirps, err := cfg.queries.GetAllChirps(r.Context())
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		writeJSON(w, http.StatusOK, fetchedChirps)
 	})
 }
 
+// HandlerGetChirp returns a chirp based on a id path
+//
+// Returns 400 if the chirp ID cannot be parsed as UUID
+// Returns 404 if no chirp exists with the given ID
+// Returns 200 with chirp data on success
 func (cfg *apiConfig) handlerGetChirp() http.Handler {
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("chirpID")
 		parsedID, err := uuid.Parse(id)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError) // 500
+			w.WriteHeader(http.StatusBadRequest) // 400
 			return
 		}
 
