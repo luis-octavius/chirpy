@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/luis-octavius/chirpy/internal/auth"
 	"github.com/luis-octavius/chirpy/internal/database"
 )
 
@@ -16,8 +17,7 @@ import (
 // Returns 201 with created chirp data on success
 func (cfg *apiConfig) handlerAddChirps() http.Handler {
 	type CreateChirpRequest struct {
-		Body   string    `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
 	}
 
 	type validateChirpResponse struct {
@@ -35,6 +35,20 @@ func (cfg *apiConfig) handlerAddChirps() http.Handler {
 			return
 		}
 
+		bearerToken, err := auth.GetBearerToken(r.Header)
+		if err != nil {
+			log.Printf("error getting the Bearer token: %v", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		userID, err := auth.ValidateJWT(bearerToken, cfg.secret)
+		if err != nil {
+			log.Printf("error authorizing user: %v", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
 		chirpLength := 140
 
 		// the size of the body cannot be greater than the size of a chirp
@@ -49,7 +63,7 @@ func (cfg *apiConfig) handlerAddChirps() http.Handler {
 
 		chirp, err := cfg.queries.CreateChirp(r.Context(), database.CreateChirpParams{
 			Body:   filteredMessage,
-			UserID: req.UserID,
+			UserID: userID,
 		})
 		if err != nil {
 			log.Printf("error creating the chirp: %v", err)

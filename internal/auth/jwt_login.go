@@ -41,6 +41,5 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 		return uuid.Nil, fmt.Errorf("invalid subject UUID: %w", err)
 	}
 
-	fmt.Println(id)
 	return id, nil
 }

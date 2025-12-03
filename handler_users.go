@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/luis-octavius/chirpy/internal/auth"
 	"github.com/luis-octavius/chirpy/internal/database"
@@ -56,6 +58,7 @@ func (cfg *apiConfig) handlerUserLogin() http.Handler {
 	type reqParams struct {
 		Password string `json:"password"`
 		Email    string `json:"email"`
+		Expires  int    `json:"expires_in_seconds"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +69,7 @@ func (cfg *apiConfig) handlerUserLogin() http.Handler {
 			return
 		}
 
+		// retrieves user from db - fails if user doesn't exist or use wrong password
 		user, err := cfg.queries.GetUserByEmail(r.Context(), params.Email)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -73,6 +77,7 @@ func (cfg *apiConfig) handlerUserLogin() http.Handler {
 			return
 		}
 
+		// check password hash against input password
 		checkPassword, err := auth.CheckPasswordHash(params.Password, user.HashedPassword)
 		if err != nil || !checkPassword {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -80,11 +85,24 @@ func (cfg *apiConfig) handlerUserLogin() http.Handler {
 			return
 		}
 
+		// expires cannot be greather than 1 hour
+		// default is 1 hour
+		var expires time.Duration
+		if params.Expires >= 3600 || params.Expires == 0 {
+			expires, err = time.ParseDuration("3600s")
+		} else {
+			expires, err = time.ParseDuration(strconv.Itoa(params.Expires) + "s")
+		}
+
+		token, err := auth.MakeJWT(user.ID, cfg.secret, expires)
+
+		// create JSON answer
 		resp := User{
 			ID:        user.ID,
-			Email:     user.Email,
 			CreatedAt: user.CreatedAt,
 			UpdatedAt: user.UpdatedAt,
+			Email:     user.Email,
+			Token:     token,
 		}
 
 		writeJSON(w, http.StatusOK, resp)

@@ -18,6 +18,7 @@ type apiConfig struct {
 	fileserverHits atomic.Int32
 	queries        *database.Queries
 	platform       string
+	secret         string
 }
 
 type User struct {
@@ -25,6 +26,7 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
+	Token     string    `json:"token"`
 }
 
 type Chirp struct {
@@ -53,6 +55,7 @@ func main() {
 	var apiCfg apiConfig
 	apiCfg.queries = dbQueries
 	apiCfg.platform = platform
+	apiCfg.secret = os.Getenv("SECRET")
 
 	// server config
 	server := http.Server{
