@@ -22,11 +22,12 @@ type apiConfig struct {
 }
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-	Token     string    `json:"token"`
+	ID           uuid.UUID `json:"id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Email        string    `json:"email"`
+	Token        string    `json:"token"`
+	RefreshToken string    `json:"refresh_token"`
 }
 
 type Chirp struct {
@@ -81,6 +82,10 @@ func main() {
 	mux.Handle("GET /api/chirps", apiCfg.handlerGetAllChirps())
 	mux.Handle("POST /api/chirps", apiCfg.handlerAddChirps())
 	mux.Handle("GET /api/chirps/{chirpID}", apiCfg.handlerGetChirp())
+
+	// token endpoints
+	mux.Handle("POST /api/refresh", apiCfg.handlerRefreshToken())
+	mux.Handle("POST /api/revoke", apiCfg.handlerRevokeToken())
 
 	// ListenAndServe starts a server with an address and a handler
 	err = server.ListenAndServe()

@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/luis-octavius/chirpy/internal/auth"
@@ -58,7 +57,6 @@ func (cfg *apiConfig) handlerUserLogin() http.Handler {
 	type reqParams struct {
 		Password string `json:"password"`
 		Email    string `json:"email"`
-		Expires  int    `json:"expires_in_seconds"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -87,22 +85,25 @@ func (cfg *apiConfig) handlerUserLogin() http.Handler {
 
 		// expires cannot be greather than 1 hour
 		// default is 1 hour
-		var expires time.Duration
-		if params.Expires >= 3600 || params.Expires == 0 {
-			expires, err = time.ParseDuration("3600s")
-		} else {
-			expires, err = time.ParseDuration(strconv.Itoa(params.Expires) + "s")
-		}
+		expiresAccToken := 1 * time.Hour
+		refreshToken, _ := auth.MakeRefreshToken()
 
-		token, err := auth.MakeJWT(user.ID, cfg.secret, expires)
+		token, err := auth.MakeJWT(user.ID, cfg.secret, expiresAccToken)
+
+		newRefreshToken, err := cfg.queries.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+			Token:     refreshToken,
+			UserID:    user.ID,
+			ExpiresAt: time.Now().AddDate(0, 0, 60),
+		})
 
 		// create JSON answer
 		resp := User{
-			ID:        user.ID,
-			CreatedAt: user.CreatedAt,
-			UpdatedAt: user.UpdatedAt,
-			Email:     user.Email,
-			Token:     token,
+			ID:           user.ID,
+			CreatedAt:    user.CreatedAt,
+			UpdatedAt:    user.UpdatedAt,
+			Email:        user.Email,
+			Token:        token,
+			RefreshToken: newRefreshToken.Token,
 		}
 
 		writeJSON(w, http.StatusOK, resp)
