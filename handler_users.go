@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -105,6 +107,69 @@ func (cfg *apiConfig) handlerUserLogin() http.Handler {
 			Token:        token,
 			RefreshToken: newRefreshToken.Token,
 		}
+
+		writeJSON(w, http.StatusOK, resp)
+	})
+}
+
+func (cfg *apiConfig) handlerUpdateUser() http.Handler {
+	type reqParams struct {
+		Password string `json:"password"`
+		Email    string `json:"email"`
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var params reqParams
+
+		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		token, err := auth.GetBearerToken(r.Header)
+		if err != nil {
+			log.Printf("error getting token from Authentication Header: %v\n", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		validatedUser, err := auth.ValidateJWT(token, cfg.secret)
+		if err != nil {
+			log.Printf("error authenticating token: %v\n", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		user, err := cfg.queries.GetUserByID(r.Context(), validatedUser)
+		if err != nil {
+			log.Printf("error getting user by ID: %v", err)
+		}
+
+		hashedPassword, err := auth.HashPassword(params.Password)
+		if err != nil {
+			log.Printf("error hashing password: %v\n", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		err = cfg.queries.UpdateUserEmailAndPass(r.Context(), database.UpdateUserEmailAndPassParams{
+			HashedPassword: hashedPassword,
+			Email:          params.Email,
+			ID:             user.ID,
+		})
+		if err != nil {
+			log.Printf("error updating user email and password: %v\n", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		resp := User{
+			ID:        user.ID,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+			Email:     params.Email,
+		}
+		fmt.Println("resp: ", resp)
 
 		writeJSON(w, http.StatusOK, resp)
 	})

@@ -26,8 +26,8 @@ type User struct {
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 	Email        string    `json:"email"`
-	Token        string    `json:"token"`
-	RefreshToken string    `json:"refresh_token"`
+	Token        string    `json:"token,omitempty"`
+	RefreshToken string    `json:"refresh_token,omitempty"`
 }
 
 type Chirp struct {
@@ -77,6 +77,7 @@ func main() {
 	// users endpoints
 	mux.Handle("POST /api/users", apiCfg.handlerUsers())
 	mux.Handle("POST /api/login", apiCfg.handlerUserLogin())
+	mux.Handle("PUT /api/users", apiCfg.handlerUpdateUser())
 
 	// chirps endpoints
 	mux.Handle("GET /api/chirps", apiCfg.handlerGetAllChirps())
