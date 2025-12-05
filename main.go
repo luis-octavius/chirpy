@@ -19,6 +19,7 @@ type apiConfig struct {
 	queries        *database.Queries
 	platform       string
 	secret         string
+	apiKey         string
 }
 
 type User struct {
@@ -58,6 +59,7 @@ func main() {
 	apiCfg.queries = dbQueries
 	apiCfg.platform = platform
 	apiCfg.secret = os.Getenv("SECRET")
+	apiCfg.apiKey = os.Getenv("POLKA_KEY")
 
 	// server config
 	server := http.Server{

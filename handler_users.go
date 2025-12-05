@@ -189,9 +189,15 @@ func (cfg *apiConfig) handlerUpgradeUser() http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiKey, err := auth.GetAPIKey(r.Header)
+		if err != nil || apiKey != cfg.apiKey {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
 		var params reqParams
 
-		err := json.NewDecoder(r.Body).Decode(&params)
+		err = json.NewDecoder(r.Body).Decode(&params)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
@@ -210,7 +216,6 @@ func (cfg *apiConfig) handlerUpgradeUser() http.Handler {
 		}
 
 		w.WriteHeader(http.StatusNoContent)
-		return
 
 	})
 }
