@@ -105,19 +105,67 @@ func (cfg *apiConfig) handlerGetAllChirps() http.Handler {
 // Returns 200 with chirp data on success
 func (cfg *apiConfig) handlerGetChirp() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("chirpID")
-		parsedID, err := uuid.Parse(id)
+		chirpID := r.PathValue("chirpID")
+		parsedChirpID, err := uuid.Parse(chirpID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest) // 400
 			return
 		}
 
-		chirp, err := cfg.queries.GetChirpByID(r.Context(), parsedID)
+		chirp, err := cfg.queries.GetChirpByID(r.Context(), parsedChirpID)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound) // 404
 			return
 		}
 
 		writeJSON(w, http.StatusOK, chirp) // 200
+	})
+}
+
+func (cfg *apiConfig) handlerDeleteChirp() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		chirpID := r.PathValue("chirpID")
+		parsedChirpID, err := uuid.Parse(chirpID)
+		if err != nil {
+			log.Printf("error parsing chirpID into UUID: %v\n", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		token, err := auth.GetBearerToken(r.Header)
+		if err != nil {
+			log.Printf("error getting the token from header: %v\n", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		validatedUser, err := auth.ValidateJWT(token, cfg.secret)
+		if err != nil {
+			log.Printf("error validating JWT token from user: %v", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		chirp, err := cfg.queries.GetChirpByID(r.Context(), parsedChirpID)
+		if err != nil {
+			log.Printf("error getting chirp by ID: %v", err)
+		}
+
+		if chirp.UserID != validatedUser {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+
+		err = cfg.queries.DeleteChirpByID(r.Context(), database.DeleteChirpByIDParams{
+			ID:   parsedChirpID,
+			ID_2: validatedUser,
+		})
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		log.Printf("chirp with id %v deleted successfully", chirpID)
+		w.WriteHeader(http.StatusNoContent)
 	})
 }
