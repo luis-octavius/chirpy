@@ -24,3 +24,8 @@ WHERE id = $3;
 -- name: GetUserByID :one 
 SELECT * FROM users 
 WHERE id = $1; 
+
+-- name: UpgradeUserByID :exec 
+UPDATE users 
+SET is_chirpy_red = true 
+WHERE id = $1; 

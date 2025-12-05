@@ -28,6 +28,7 @@ type User struct {
 	Email        string    `json:"email"`
 	Token        string    `json:"token,omitempty"`
 	RefreshToken string    `json:"refresh_token,omitempty"`
+	IsChirpyRed  bool      `json:"is_chirpy_red"`
 }
 
 type Chirp struct {
@@ -75,14 +76,16 @@ func main() {
 	mux.Handle("POST /admin/reset", apiCfg.handlerReset())
 
 	// users endpoints
-	mux.Handle("POST /api/users", apiCfg.handlerUsers())
+	mux.Handle("POST /api/users", apiCfg.handlerCreateUser())
 	mux.Handle("POST /api/login", apiCfg.handlerUserLogin())
 	mux.Handle("PUT /api/users", apiCfg.handlerUpdateUser())
+	mux.Handle("POST /api/polka/webhooks", apiCfg.handlerUpgradeUser())
 
 	// chirps endpoints
 	mux.Handle("GET /api/chirps", apiCfg.handlerGetAllChirps())
 	mux.Handle("POST /api/chirps", apiCfg.handlerAddChirps())
 	mux.Handle("GET /api/chirps/{chirpID}", apiCfg.handlerGetChirp())
+	mux.Handle("DELETE /api/chirps/{chirpID}", apiCfg.handlerDeleteChirp())
 
 	// token endpoints
 	mux.Handle("POST /api/refresh", apiCfg.handlerRefreshToken())

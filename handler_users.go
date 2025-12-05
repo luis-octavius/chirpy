@@ -7,11 +7,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/luis-octavius/chirpy/internal/auth"
 	"github.com/luis-octavius/chirpy/internal/database"
 )
 
-func (cfg *apiConfig) handlerUsers() http.Handler {
+func (cfg *apiConfig) handlerCreateUser() http.Handler {
 	type validateParams struct {
 		Email    string `json:"email,omitempty"`
 		Password string `json:"password"`
@@ -45,10 +46,11 @@ func (cfg *apiConfig) handlerUsers() http.Handler {
 		}
 
 		resp := User{
-			ID:        user.ID,
-			CreatedAt: user.CreatedAt,
-			UpdatedAt: user.UpdatedAt,
-			Email:     user.Email,
+			ID:          user.ID,
+			CreatedAt:   user.CreatedAt,
+			UpdatedAt:   user.UpdatedAt,
+			Email:       user.Email,
+			IsChirpyRed: user.IsChirpyRed,
 		}
 
 		writeJSON(w, http.StatusCreated, resp)
@@ -106,6 +108,7 @@ func (cfg *apiConfig) handlerUserLogin() http.Handler {
 			Email:        user.Email,
 			Token:        token,
 			RefreshToken: newRefreshToken.Token,
+			IsChirpyRed:  user.IsChirpyRed,
 		}
 
 		writeJSON(w, http.StatusOK, resp)
@@ -164,13 +167,50 @@ func (cfg *apiConfig) handlerUpdateUser() http.Handler {
 		}
 
 		resp := User{
-			ID:        user.ID,
-			CreatedAt: user.CreatedAt,
-			UpdatedAt: user.UpdatedAt,
-			Email:     params.Email,
+			ID:          user.ID,
+			CreatedAt:   user.CreatedAt,
+			UpdatedAt:   user.UpdatedAt,
+			Email:       params.Email,
+			IsChirpyRed: user.IsChirpyRed,
 		}
 		fmt.Println("resp: ", resp)
 
 		writeJSON(w, http.StatusOK, resp)
+	})
+}
+
+func (cfg *apiConfig) handlerUpgradeUser() http.Handler {
+
+	type reqParams struct {
+		Event string `json:"event"`
+		Data  struct {
+			UserID string `json:"user_id"`
+		} `json:"data"`
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var params reqParams
+
+		err := json.NewDecoder(r.Body).Decode(&params)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if params.Event != "user.upgraded" {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		userID, err := uuid.Parse(params.Data.UserID)
+		err = cfg.queries.UpgradeUserByID(r.Context(), userID)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+		return
+
 	})
 }
