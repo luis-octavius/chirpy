@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sort"
 
 	"github.com/google/uuid"
 	"github.com/luis-octavius/chirpy/internal/auth"
@@ -90,6 +91,8 @@ func (cfg *apiConfig) handlerAddChirps() http.Handler {
 func (cfg *apiConfig) handlerGetAllChirps() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authorID := r.URL.Query().Get("author_id")
+		sortParam := r.URL.Query().Get("sort")
+
 		log.Println("author id: ", authorID)
 
 		if authorID != "" {
@@ -105,6 +108,7 @@ func (cfg *apiConfig) handlerGetAllChirps() http.Handler {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
+			sortChirps(sortParam, fetchedChirps)
 			writeJSON(w, http.StatusOK, fetchedChirps)
 
 		} else {
@@ -113,10 +117,24 @@ func (cfg *apiConfig) handlerGetAllChirps() http.Handler {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
+
+			sortChirps(sortParam, fetchedChirps)
 			writeJSON(w, http.StatusOK, fetchedChirps)
 
 		}
 	})
+}
+
+func sortChirps(param string, chirps []database.Chirp) {
+	if param == "asc" {
+		sort.Slice(chirps, func(i, j int) bool { return chirps[i].CreatedAt.Before(chirps[j].CreatedAt) })
+		return
+	}
+
+	if param == "desc" {
+		sort.Slice(chirps, func(i, j int) bool { return chirps[i].CreatedAt.After(chirps[j].CreatedAt) })
+		return
+	}
 }
 
 // HandlerGetChirp returns a chirp based on a id path
