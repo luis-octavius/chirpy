@@ -89,12 +89,33 @@ func (cfg *apiConfig) handlerAddChirps() http.Handler {
 // Returns 200 with all chirps data on success
 func (cfg *apiConfig) handlerGetAllChirps() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fetchedChirps, err := cfg.queries.GetAllChirps(r.Context())
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+		authorID := r.URL.Query().Get("author_id")
+		log.Println("author id: ", authorID)
+
+		if authorID != "" {
+			parsedID, err := uuid.Parse(authorID)
+			if err != nil {
+				log.Printf("error parsing id: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			fetchedChirps, err := cfg.queries.GetChirpsByUserID(r.Context(), parsedID)
+			if err != nil {
+				log.Printf("error fetching chirp by author ID: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			writeJSON(w, http.StatusOK, fetchedChirps)
+
+		} else {
+			fetchedChirps, err := cfg.queries.GetAllChirps(r.Context())
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			writeJSON(w, http.StatusOK, fetchedChirps)
+
 		}
-		writeJSON(w, http.StatusOK, fetchedChirps)
 	})
 }
 
