@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -46,6 +47,10 @@ func main() {
 	// get the url of database from .env
 	dbUrl := os.Getenv("DB_URL")
 	platform := os.Getenv("PLATFORM")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
 	// open the connection with the database url
 	db, err := sql.Open("postgres", dbUrl)
@@ -63,7 +68,7 @@ func main() {
 
 	// server config
 	server := http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + port,
 		Handler: mux,
 	}
 
@@ -93,6 +98,7 @@ func main() {
 	mux.Handle("POST /api/refresh", apiCfg.handlerRefreshToken())
 	mux.Handle("POST /api/revoke", apiCfg.handlerRevokeToken())
 
+	fmt.Printf("Server running at port: %s", port)
 	// ListenAndServe starts a server with an address and a handler
 	err = server.ListenAndServe()
 	if err != nil {

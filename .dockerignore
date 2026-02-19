@@ -1,0 +1,37 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Dependências locais
+vendor/
+
+# Arquivos de ambiente
+.env
+.env.local
+.env.production
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Testes
+*_test.go
+testdata/
+
+# Documentação
+README.md
+LICENSE
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
