@@ -11,7 +11,7 @@ Uma API RESTful simulando o backend de uma plataforma social estilo Twitter, des
 *   **Segurança**: Senhas hasheadas com bcrypt, tokens assinados e validação rigorosa.
 *   **Arquitetura Limpa**: Separação de responsabilidades com handlers, middleware e lógica de banco.
 
-## Stack Tecnológica
+## Stack 
 
 *   **Linguagem**: [Go](https://golang.org/)
 *   **Banco de Dados**: [PostgreSQL](https://www.postgresql.org/)
@@ -64,7 +64,7 @@ Uma API RESTful simulando o backend de uma plataforma social estilo Twitter, des
     ```
     A API estará disponível em `http://localhost:8080`.
 
-## 📚 Documentação da API
+## Documentação da API
 
 A seguir, os principais endpoints disponíveis.
 
@@ -138,7 +138,7 @@ Para rodar testes de um arquivo específico (ex: middleware):
 go test -v ./... -run TestValidateMessage
 ```
 
-## Próximos Passos Possíveis
+## Próximos Passos
 
 - [ ] Adicionar Docker e docker-compose.yml para facilitar a execução do ambiente (banco + app).
 - [ ] Implementar testes de integração para os handlers.
